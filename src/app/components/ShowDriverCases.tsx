@@ -6,9 +6,12 @@ import { client } from "../client";
 import { sepolia } from "thirdweb/chains";
 import { trafficManagementSystem } from "../constants/constant";
 
+type WalletAddress = {
+    walletAddress: string;
+}
 
-const ShowDriverCases = () => {
-    const account = useActiveAccount();
+
+const ShowDriverCases = ({walletAddress}: WalletAddress) => {
     const contract = getContract({
         client: client,
         chain: sepolia,
@@ -18,7 +21,7 @@ const ShowDriverCases = () => {
     const { data: allCases, isPending: isCasesPending } = useReadContract({
     contract,
     method: "function getCasesByDriver(address _driverAddress) view returns ((address policeOfficer, string policeOfficerFirstName, string policeOfficerLastName, string policeOfficerID, string licenseNumber, string vehiclePlateNumber, string vehicleType, string caseType, uint256 fineAmount, bool resolved)[])",
-    params: [account?.address as string]
+    params: [walletAddress]
   });
     
     return (
@@ -36,6 +39,7 @@ const ShowDriverCases = () => {
                                 allCases.map((singleCase, index) => (
                                     <SingleCase
                                         key={index}
+                                        walletAddress={walletAddress}
                                         driverCase={singleCase}
                                         index={index}
                                     />  

@@ -148,7 +148,9 @@ const DriverProfile = () => {
                 </dl>
             </div>
             </div>
-            <ShowDriverCases />
+            <ShowDriverCases
+                walletAddress={account?.address as string}
+            />
             </div>
         
     )

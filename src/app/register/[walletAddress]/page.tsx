@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import axios from 'axios';
 import { API_Key, API_Secret, trafficManagementSystem } from '@/app/constants/constant'
-import { useActiveAccount, useReadContract, useSendTransaction } from "thirdweb/react";
+import { TransactionButton, useActiveAccount, useReadContract, useSendTransaction } from "thirdweb/react";
 import { getContract, prepareContractCall } from "thirdweb";
 import { client } from "@/app/client";
 import { sepolia } from "thirdweb/chains";
@@ -55,6 +55,7 @@ const Register = () => {
   const [profileImageUrl, setProfileImageUrl] = useState('');
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const { mutate: sendTransaction } = useSendTransaction();
 
@@ -77,7 +78,7 @@ const Register = () => {
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
-    alert("Please wait couple of seconds. You will get a confirm button.")
+    setIsLoading(true);
     try {
       if (_licenseImage) {
         const licenseImgUrl = await uploadToPinata(_licenseImage);
@@ -100,20 +101,23 @@ const Register = () => {
     } catch (error) {
       console.error("Error uploading images:", error);
       alert("Unable to upload images to Pinata");
+    }finally {
+      setIsLoading(false);
     }
   };
 
-  const onClick = () => {
-    const transaction = prepareContractCall({
-      contract,
-      method: "function createDriverProfile(string _firstName, string _lastName, string _dateOfBirth, string _gender, string _contactNumber, string _emailAddress, string _nid, string _residentialAddress, string _licenseNumber, string _licenseExpiryDate, string _licenseType, string _licenseImage, string _vehicleType, string _vehicleIN, string _vehiclePlateNumber, string _taxTokenNumber, string _taxTokenImage, string _profileImage)",
-      params: [_firstName, _lastName, _dateOfBirth, _gender, _contactNumber, _emailAddress, _nid, _residentialAddress, _licenseNumber, _licenseExpiryDate, _licenseType, licenseImageUrl, _vehicleType, _vehicleIN, _vehiclePlateNumber, _taxTokenNumber, taxTokenImageUrl, profileImageUrl]
-    });
-    sendTransaction(transaction);
+  const handleTransactionComplete = () => {
+    setIsModalOpen(false);
+    alert("Driver Profile Created");
   }
 
   return (
     <div className="max-w-4xl mx-auto font-[sans-serif] p-6">
+      {isLoading && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="loader">Loading...</div>
+        </div>
+      )}
       <div className="text-center mb-16">
         <h4 className="text-gray-800 text-base font-semibold mt-6">
           Create Driver Profile
@@ -391,16 +395,19 @@ const Register = () => {
             >
               Cancel
             </button>
-            <button
-              onClick={async () => {
-                await onClick(); // Call onClick if confirmed
-                setIsModalOpen(false); // Close modal after confirmation
-                alert("Please wait for transaction to complete. You will redirect")
-              }}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              <TransactionButton
+                transaction={() => 
+                prepareContractCall({
+                      contract,
+                      method: "function createDriverProfile(string _firstName, string _lastName, string _dateOfBirth, string _gender, string _contactNumber, string _emailAddress, string _nid, string _residentialAddress, string _licenseNumber, string _licenseExpiryDate, string _licenseType, string _licenseImage, string _vehicleType, string _vehicleIN, string _vehiclePlateNumber, string _taxTokenNumber, string _taxTokenImage, string _profileImage)",
+                      params: [_firstName, _lastName, _dateOfBirth, _gender, _contactNumber, _emailAddress, _nid, _residentialAddress, _licenseNumber, _licenseExpiryDate, _licenseType, licenseImageUrl, _vehicleType, _vehicleIN, _vehiclePlateNumber, _taxTokenNumber, taxTokenImageUrl, profileImageUrl]
+                    })
+                } 
+                onError={(error) => alert(`Error:${error}`)}
+                onTransactionConfirmed={async () => handleTransactionComplete}
             >
               Confirm
-            </button>
+            </TransactionButton>
           </div>
         </div>
       </div>

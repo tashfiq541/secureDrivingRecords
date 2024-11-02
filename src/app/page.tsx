@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 export default function Home() {
   const account = useActiveAccount();
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
 
   const contract = getContract({
     client: client,
@@ -35,7 +36,7 @@ export default function Home() {
     params: [account?.address as string]
   });
 
-  const { data: companies, isPending } = useReadContract({
+  const { data: companies, isPending: isCompaniesLoading } = useReadContract({
     contract,
     method: "function getApprovedRideSharingCompanies() view returns (address[])",
     params: []
@@ -44,23 +45,40 @@ export default function Home() {
   const isApprovedCompany = companies?.includes(account?.address as string);
 
   useEffect(() => {
-  // Redirect based on the user's role or approval status
-  if (account?.address && government && account.address === government) {
-    router.push(`/admin/${account.address}`);
-  } else if (driverProfile?.firstName) {
-    router.push(`/driverprofile/${account?.address}`);
-  } else if (policeProfile?.firstName) {
-    router.push(`/policeprofile/${account?.address}`);
-  } else if (isApprovedCompany) {
-    router.push(`/company/${account?.address}`);
-  }
-}, [account, government, driverProfile, policeProfile, isApprovedCompany, router]);
+    if (account?.address) {
+      // Start loading when useEffect is called
+      setIsLoading(true);
+
+      if (government && account.address === government) {
+        router.push(`/admin/${account.address}`);
+      } else if (driverProfile?.firstName) {
+        router.push(`/driverprofile/${account?.address}`);
+      } else if (policeProfile?.firstName) {
+        router.push(`/policeprofile/${account?.address}`);
+      } else if (isApprovedCompany) {
+        router.push(`/company/${account?.address}`);
+      }
+
+      // Stop loading after redirects are handled
+      setIsLoading(false);
+    }
+  }, [account, government, driverProfile, policeProfile, isApprovedCompany, router]);
 
   const handleRegisterClick = () => {
     if (account) {
+      setIsLoading(true);
       router.push(`/register/${account?.address}`);
+      setIsLoading(false);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="text-3xl font-semibold text-indigo-500">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <section className="bg-white text-gray-600 body-font">
@@ -72,6 +90,9 @@ export default function Home() {
           </h1>
           <p className="mb-8 leading-relaxed">
             Manage driver profiles and resolve traffic violation cases seamlessly. Police officers can file cases against drivers, while authorized ride-sharing companies can access verified driver records. <span className="font-bold">All interactions are secure and require MetaMask wallet connection for authentication.</span> 
+          </p>
+          <p className="text-sm text-gray-500 mb-8">
+            <strong>Note:</strong> If you're interested in applying as an authorized ride-sharing company, please contact <a href="mailto:tashfiqahmedemon1@gmail.com" className="text-indigo-500 underline">tashfiqahmedemon1@gmail.com</a>.
           </p>
           <div className="flex justify-center">
             <button 

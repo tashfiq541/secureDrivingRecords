@@ -1,7 +1,7 @@
 'use client';
 
 import { getContract, prepareContractCall } from "thirdweb";
-import { TransactionButton, useSendTransaction } from "thirdweb/react";
+import { TransactionButton, useActiveAccount, useSendTransaction } from "thirdweb/react";
 import { client } from "../client";
 import { sepolia } from "thirdweb/chains";
 import { trafficManagementSystem } from "../constants/constant";
@@ -20,11 +20,13 @@ type DriverCase = {
 }
 
 type CaseProps = {
+    walletAddress: string;
     driverCase: DriverCase;
     index: number;
 }
 
-const SingleCase = ({ driverCase, index }: CaseProps) => {
+const SingleCase = ({ walletAddress, driverCase, index }: CaseProps) => {
+    const account = useActiveAccount();
     const statusText = driverCase.resolved ? "Resolved" : "Pending";
     const statusStyle = driverCase.resolved ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800";
 
@@ -69,27 +71,27 @@ const SingleCase = ({ driverCase, index }: CaseProps) => {
                     <span className="text-gray-800 ml-2">{driverCase?.fineAmount.toString()} wei</span>
                 </div>
             </div>
-            <div className="mt-4">
-                <TransactionButton
-                    transaction={() => prepareContractCall({
-                        contract,
-                        method: "function payFine(uint256 _caseIndex) payable",
-                        params: [BigInt(index)],
-                        value: driverCase?.fineAmount,
-                    })}
-                    
-                    onTransactionConfirmed={async () => alert("Funded successfully!")}
-
-                    className={`w-full text-white py-2 px-4 rounded-md ${
-                        driverCase?.resolved
-                            ? "bg-gray-900 cursor-not-allowed"
-                            : "bg-cyan-600 hover:bg-cyan-700"
-                    }`}
-                    disabled={driverCase?.resolved}
-                >
-                    Pay Fine
-                </TransactionButton>
-            </div>
+            {account?.address === walletAddress && (
+                <div className="mt-4">
+                    <TransactionButton
+                        transaction={() => prepareContractCall({
+                            contract,
+                            method: "function payFine(uint256 _caseIndex) payable",
+                            params: [BigInt(index)],
+                            value: driverCase?.fineAmount,
+                        })}
+                        onTransactionConfirmed={async () => alert("You have sucessfully pay the fine.")}
+                        className={`w-full text-white py-2 px-4 rounded-md ${
+                            driverCase?.resolved
+                                ? "bg-gray-900 cursor-not-allowed"
+                                : "bg-cyan-600 hover:bg-cyan-700"
+                        }`}
+                        disabled={driverCase?.resolved}
+                    >
+                        Pay Fine
+                    </TransactionButton>
+                </div>
+            )}
         </div>
     )
 }

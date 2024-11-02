@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { getContract, prepareContractCall } from "thirdweb";
 import { sepolia } from "thirdweb/chains";
 import axios from 'axios';
-import { useActiveAccount, useReadContract, useSendTransaction } from "thirdweb/react";
+import { TransactionButton, useActiveAccount, useReadContract, useSendTransaction } from "thirdweb/react";
 import { useRouter } from "next/navigation";
 
 const RegisterPolice = () => {
@@ -25,8 +25,10 @@ const RegisterPolice = () => {
     });
 
     useEffect(() => {
+        if (!account) {
+            router.push("/");
+        }
         if (police?.firstName) {
-            alert("transaction completed.")
             router.push(`/policeprofile/${account?.address}`)
         }
     })
@@ -45,6 +47,8 @@ const RegisterPolice = () => {
     const [_code, setCode] = useState('');
     const [profileImageUrl, setProfileImageUrl] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+
 
     const uploadToPinata = async (file: File) => {
         const formData = new FormData();
@@ -65,7 +69,7 @@ const RegisterPolice = () => {
 
     const handleSubmit = async (e: any) => {
         e.preventDefault();
-        alert("Please wait couple of seconds. You will get confirm button.")
+        setIsLoading(true);
         try {
             if (_code !== 'police1971@') {
                 alert('Invalid registration code. Please enter the correct code.');
@@ -82,22 +86,23 @@ const RegisterPolice = () => {
             } catch (error) {
             console.error("Error uploading image:", error);
             alert("Unable to upload image to Pinata");
-            }
+            } finally {
+      setIsLoading(false);
+    }
     };
-    
-    const { mutate: sendTransaction } = useSendTransaction();
 
-    const onClick = () => {
-    const transaction = prepareContractCall({
-      contract,
-      method: "function createPoliceProfile(string _firstName, string _lastName, string _dateOfBirth, string _gender, string _contactNumber, string _residentialAddress, string _emailAddress, string _nid, string _policeID, string _designation, string _profileImage, string _code)",
-      params: [_firstName, _lastName, _dateOfBirth, _gender, _contactNumber, _residentialAddress, _emailAddress, _nid, _policeID, _designation, profileImageUrl, _code]
-    });
-    sendTransaction(transaction);
-  }
+    const handleTransactionComplete = () => {
+        setIsModalOpen(false);
+        alert("Police Profile Created.")
+    }
     
     return (
         <div className="max-w-4xl mx-auto font-[sans-serif] p-6">
+            {isLoading && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="loader">Loading...</div>
+        </div>
+      )}
             <div className="text-center mb-16">
                 <h4 className="text-gray-800 text-base font-semibold mt-6">
                 Register Police Officer
@@ -279,16 +284,21 @@ const RegisterPolice = () => {
                     >
                         Cancel
                     </button>
-                    <button
-                        onClick={async () => {
-                        await onClick();
-                                    setIsModalOpen(false);
-                                    alert("please wail until transaction completed")
-                        }}
+                            <TransactionButton
+                                transaction={() => 
+                                    prepareContractCall({
+                                    contract,
+                                    method: "function createPoliceProfile(string _firstName, string _lastName, string _dateOfBirth, string _gender, string _contactNumber, string _residentialAddress, string _emailAddress, string _nid, string _policeID, string _designation, string _profileImage, string _code)",
+                                    params: [_firstName, _lastName, _dateOfBirth, _gender, _contactNumber, _residentialAddress, _emailAddress, _nid, _policeID, _designation, profileImageUrl, _code]
+                                    })
+                                }
+                                onError={(error) => alert(`Error:${error.message}`)}
+                                onTransactionConfirmed={handleTransactionComplete}
+                
                         className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                     >
                         Confirm
-                    </button>
+                    </TransactionButton>
                     </div>
                 </div>
                 </div>

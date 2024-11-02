@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { getContract, prepareContractCall } from "thirdweb";
 import { sepolia } from "thirdweb/chains";
 import { TransactionButton, useActiveAccount, useReadContract } from "thirdweb/react";
+import ShowDriverCases from "@/app/components/ShowDriverCases";
 
 const Admin = () => {
     const account = useActiveAccount();
@@ -305,7 +306,11 @@ const Admin = () => {
                                 </div>
                             </dl>
                         </div>
+                        <ShowDriverCases
+                            walletAddress={viewDriverAddress}
+                        />
                     </div>
+                    
                 </div>
             )}
 

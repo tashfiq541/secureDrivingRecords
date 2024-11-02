@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getContract, prepareContractCall } from "thirdweb";
 import { sepolia } from "thirdweb/chains";
-import { useActiveAccount, useReadContract, useSendTransaction } from "thirdweb/react";
+import { TransactionButton, useActiveAccount, useReadContract, useSendTransaction } from "thirdweb/react";
 
 const PoliceProfile = () => {
     const account = useActiveAccount();
@@ -36,22 +36,6 @@ const PoliceProfile = () => {
     method: "function getPoliceProfile(address _policeAddress) view returns ((string firstName, string lastName, string dateOfBirth, string gender, string contactNumber, string residentialAddress, string emailAddress, string nid, string policeID, string designation, string profileImage))",
     params: [account?.address as string]
   });
-
-    const onClick = async () => {
-    const transaction = prepareContractCall({
-      contract,
-      method: "function fileCase(string _licenseNumber, string _vehiclePlateNumber, string _vehicleType, string _caseType, uint256 _fineAmount)",
-      params: [licenseNumber, vehiclePlateNumber, vehicleType, caseType, BigInt(fineAmount)]
-    });
-        await sendTransaction(transaction);
-        alert("Please wait for transaction to complete.");
-            // Clear the input fields
-            setLicenseNumber("");
-            setVehiclePlateNumber("");
-            setVehicleType("");
-            setCaseType("");
-        setFineAmount("");
-  }
 
     if (isPending) {
         return <div>Loading...</div>;
@@ -204,7 +188,7 @@ const PoliceProfile = () => {
                                     <option value="Driving Without a Helmet">Driving Without a Helmet</option>
                                     <option value="Driving Without Seatbelt">Driving Without Seatbelt</option>
                                     <option value="Driving Without Documents">Driving Without Documents</option>
-                                    <option value="Others">Others</option>
+                                    <option value="Accident">Accident</option>
                                 </select>
                             </dd>
                         </div>
@@ -224,14 +208,25 @@ const PoliceProfile = () => {
                     </dl>
                 </div>
                 <div className="flex justify-end p-4">
-                    <button
-                        onClick={async () => {
-                            await onClick();
-                        }}
+                    <TransactionButton
+                        transaction={() => 
+                            prepareContractCall({
+                            contract,
+                            method: "function fileCase(string _licenseNumber, string _vehiclePlateNumber, string _vehicleType, string _caseType, uint256 _fineAmount)",
+                            params: [licenseNumber, vehiclePlateNumber, vehicleType, caseType, BigInt(fineAmount)]
+                            })
+                        }
+                        onError={(error) => alert(`Error: ${error.message}`)}
+                        onTransactionConfirmed={async () => alert("Case submitted successfully.")}
                         className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition"
+                        style={{
+                            backgroundColor: "#1D4ED8",
+                            color: "white",
+                            transition: "background-color 0.2s ease-in-out",
+                        }}
                     >
                         Submit Case
-                    </button>
+                    </TransactionButton>
                 </div>
             </div>
         </div>

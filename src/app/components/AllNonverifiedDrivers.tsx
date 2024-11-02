@@ -1,19 +1,17 @@
 'use client';
 
 import { getContract, prepareContractCall, sendTransaction } from "thirdweb";
-import { useReadContract, useSendTransaction } from "thirdweb/react";
+import { TransactionButton, useReadContract, useSendTransaction } from "thirdweb/react";
 import { client } from "../client";
 import { sepolia } from "thirdweb/chains";
 import { trafficManagementSystem } from "../constants/constant";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 
 type NonVerifiedProps = {
     driverAddress: string;
 }
 
 const AllNonverifiedDrivers = ({ driverAddress }: NonVerifiedProps) => {
-    const router = useRouter();
     const [isModalOpen, setIsModalOpen] = useState(false);
     
     const contract = getContract({
@@ -21,8 +19,6 @@ const AllNonverifiedDrivers = ({ driverAddress }: NonVerifiedProps) => {
         chain: sepolia,
         address: trafficManagementSystem,
     })
-
-    const { mutate: sendTransaction } = useSendTransaction();
     
     const { data: driverProfile, isPending } = useReadContract({
         contract,
@@ -38,13 +34,9 @@ const AllNonverifiedDrivers = ({ driverAddress }: NonVerifiedProps) => {
         return <div>No profile data found.</div>;
     }
 
-    const onClick = () => {
-        const transaction = prepareContractCall({
-        contract,
-        method: "function verifyDriver(address _driverAddress)",
-        params: [driverAddress]
-        });
-        sendTransaction(transaction);
+    const onTransactionCompleted = () => {
+        alert("Driver verified successfully.");
+        setIsModalOpen(false);
     }
     
     return (
@@ -215,17 +207,23 @@ const AllNonverifiedDrivers = ({ driverAddress }: NonVerifiedProps) => {
                                     </dd>
                                 </div>
                                 <div className="flex justify-center mt-4">
-                                <button
-                                    className="rounded-md bg-green-600 py-2 px-4 text-white text-sm transition-all hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
-                                        onClick={async () => {
-                                            await onClick();
-                                            setIsModalOpen(false);
-                                            alert("Please wait for transaction to complete.")
-                                            router.push('/verifydriver');
-                                    }}
+                                    <TransactionButton
+                                        transaction={() => 
+                                            prepareContractCall({
+                                            contract,
+                                            method: "function verifyDriver(address _driverAddress)",
+                                            params: [driverAddress]
+                                            })
+                                        }
+                                        onError={(error) => alert(`Error: ${error.message}`)}
+                                        onTransactionConfirmed={async () => onTransactionCompleted}
+                                        style={{
+                                            backgroundColor: "#047857",
+                                            color: "white",
+                                        }}
                                     >
                                     Verify
-                                </button>
+                                </TransactionButton>
                                 </div>
                             </dl>
                         </div>
